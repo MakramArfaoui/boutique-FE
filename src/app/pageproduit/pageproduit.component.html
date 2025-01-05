@@ -1,0 +1,60 @@
+<div class="product-page">
+  <div class="header">
+    <h2>Liste des Produits</h2>
+    <button class="btn btn-primary add-button" (click)="chargerProduits()">
+      + Ajouter un produit
+    </button>
+  </div>
+
+  <div class="content">
+    <div *ngIf="loading" class="loading">
+      <div class="spinner-border"></div>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <div class="table-container" *ngIf="!loading && produits.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Prix (€)</th>
+            <th>Stock</th>
+            <th>Promotion</th>
+            <th>Catégorie</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let produit of produits">
+            <td>{{ produit.idProduit }}</td>
+            <td>{{ produit.nom }}</td>
+            <td class="description-cell">{{ produit.description }}</td>
+            <td>{{ produit.prix }} €</td>
+            <td>
+              <input type="number" 
+                     [ngModel]="produit.quantiteEnStock" 
+                     (ngModelChange)="mettreAJourStock(produit.idProduit, $event)"
+                     class="stock-input">
+            </td>
+            <td>{{ produit.promotion }}%</td>
+            <td>{{ produit.categorie }}</td>
+            <td>
+              <button class="btn btn-danger delete-button" (click)="supprimerProduit(produit.idProduit)">
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && produits.length === 0" class="empty-state">
+      Aucun produit disponible
+    </div>
+  </div>
+</div>
