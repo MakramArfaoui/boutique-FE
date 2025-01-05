@@ -32,21 +32,71 @@
         <tbody>
           <tr *ngFor="let produit of produits">
             <td>{{ produit.idProduit }}</td>
-            <td>{{ produit.nom }}</td>
-            <td class="description-cell">{{ produit.description }}</td>
-            <td>{{ produit.prix }} €</td>
+            <td>
+              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayNom">
+                <input type="text" class="form-control" [ngModel]="produitAModifier?.nom" (ngModelChange)="produitAModifier!.nom = $event">
+              </ng-container>
+              <ng-template #displayNom>
+                {{ produit.nom }}
+              </ng-template>
+            </td>
+            <td class="description-cell">
+              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayDescription">
+                <textarea class="form-control" [ngModel]="produitAModifier?.description" (ngModelChange)="produitAModifier!.description = $event"></textarea>
+              </ng-container>
+              <ng-template #displayDescription>
+                {{ produit.description }}
+              </ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayPrix">
+                <input type="number" class="form-control" [ngModel]="produitAModifier?.prix" (ngModelChange)="produitAModifier!.prix = $event">
+              </ng-container>
+              <ng-template #displayPrix>
+                {{ produit.prix }} €
+              </ng-template>
+            </td>
             <td>
               <input type="number" 
                      [ngModel]="produit.quantiteEnStock" 
-                     (ngModelChange)="mettreAJourStock(produit.idProduit, $event)"
+                     (ngModelChange)="mettreAJourStock(produit.idProduit!, $event)"
                      class="stock-input">
             </td>
-            <td>{{ produit.promotion }}%</td>
-            <td>{{ produit.categorie }}</td>
             <td>
-              <button class="btn btn-danger delete-button" (click)="supprimerProduit(produit.idProduit)">
-                Supprimer
-              </button>
+              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayPromotion">
+                <input type="number" class="form-control" [ngModel]="produitAModifier?.promotion" (ngModelChange)="produitAModifier!.promotion = $event">
+              </ng-container>
+              <ng-template #displayPromotion>
+                {{ produit.promotion }}%
+              </ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayCategorie">
+                <input type="text" class="form-control" [ngModel]="produitAModifier?.categorie" (ngModelChange)="produitAModifier!.categorie = $event">
+              </ng-container>
+              <ng-template #displayCategorie>
+                {{ produit.categorie }}
+              </ng-template>
+            </td>
+            <td>
+              <div class="btn-group">
+                <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayButtons">
+                  <button class="btn btn-success me-2" (click)="sauvegarderModification()">
+                    Sauvegarder
+                  </button>
+                  <button class="btn btn-secondary" (click)="annulerModification()">
+                    Annuler
+                  </button>
+                </ng-container>
+                <ng-template #displayButtons>
+                  <button class="btn btn-warning me-2" (click)="modifierProduit(produit)">
+                    Modifier
+                  </button>
+                  <button class="btn btn-danger delete-button" (click)="supprimerProduit(produit.idProduit!)">
+                    Supprimer
+                  </button>
+                </ng-template>
+              </div>
             </td>
           </tr>
         </tbody>
