@@ -1,22 +1,21 @@
 import { NgModule } from '@angular/core';
-import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { HttpClientModule, HTTP_INTERCEPTORS, provideHttpClient, withFetch, HttpRequest, HttpHandler, HttpInterceptor } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
-
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule, HTTP_INTERCEPTORS, HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { PageproduitModule } from './pageproduit/pageproduit.module';
-
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Injectable } from '@angular/core';
 
 @Injectable()
 class CorsInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler) {
-    const headers = req.headers
-      .set('Access-Control-Allow-Origin', '*')
-      .set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-      .set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
-    return next.handle(req.clone({ headers }));
+    const corsReq = req.clone({
+      headers: req.headers.set('Access-Control-Allow-Origin', '*')
+    });
+    return next.handle(corsReq);
   }
 }
 
@@ -28,11 +27,12 @@ class CorsInterceptor implements HttpInterceptor {
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
+    NgbModule,
     FormsModule,
-    PageproduitModule
+    ReactiveFormsModule,
+    RouterModule
   ],
   providers: [
-    provideClientHydration(),
     provideHttpClient(withFetch()),
     {
       provide: HTTP_INTERCEPTORS,

@@ -1,9 +1,21 @@
 <div class="product-page">
+  <app-notification></app-notification>
+  
   <div class="header">
     <h2>Liste des Produits</h2>
-    <button class="btn btn-primary add-button" (click)="chargerProduits()">
+    <button class="btn btn-primary add-button" (click)="openAddProductModal(addProductModal)">
       + Ajouter un produit
     </button>
+  </div>
+
+  <div class="search-container">
+    <input 
+      type="text" 
+      class="form-control search-input" 
+      [(ngModel)]="searchTerm" 
+      (ngModelChange)="searchProducts()"
+      placeholder="Rechercher un produit..."
+    >
   </div>
 
   <div class="content">
@@ -15,7 +27,7 @@
       {{ error }}
     </div>
 
-    <div class="table-container" *ngIf="!loading && produits.length > 0">
+    <div class="table-container" *ngIf="!loading && produitsAffiches.length > 0">
       <table>
         <thead>
           <tr>
@@ -24,87 +36,147 @@
             <th>Description</th>
             <th>Prix (€)</th>
             <th>Stock</th>
-            <th>Promotion</th>
             <th>Catégorie</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let produit of produits">
+          <tr *ngFor="let produit of produitsAffiches">
             <td>{{ produit.idProduit }}</td>
+            <td>{{ produit.nom }}</td>
+            <td>{{ produit.description }}</td>
+            <td>{{ produit.prix }}</td>
+            <td>{{ produit.quantiteStock }}</td>
+            <td>{{ produit.categorie }}</td>
             <td>
-              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayNom">
-                <input type="text" class="form-control" [ngModel]="produitAModifier?.nom" (ngModelChange)="produitAModifier!.nom = $event">
-              </ng-container>
-              <ng-template #displayNom>
-                {{ produit.nom }}
-              </ng-template>
-            </td>
-            <td class="description-cell">
-              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayDescription">
-                <textarea class="form-control" [ngModel]="produitAModifier?.description" (ngModelChange)="produitAModifier!.description = $event"></textarea>
-              </ng-container>
-              <ng-template #displayDescription>
-                {{ produit.description }}
-              </ng-template>
-            </td>
-            <td>
-              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayPrix">
-                <input type="number" class="form-control" [ngModel]="produitAModifier?.prix" (ngModelChange)="produitAModifier!.prix = $event">
-              </ng-container>
-              <ng-template #displayPrix>
-                {{ produit.prix }} €
-              </ng-template>
-            </td>
-            <td>
-              <input type="number" 
-                     [ngModel]="produit.quantiteEnStock" 
-                     (ngModelChange)="mettreAJourStock(produit.idProduit!, $event)"
-                     class="stock-input">
-            </td>
-            <td>
-              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayPromotion">
-                <input type="number" class="form-control" [ngModel]="produitAModifier?.promotion" (ngModelChange)="produitAModifier!.promotion = $event">
-              </ng-container>
-              <ng-template #displayPromotion>
-                {{ produit.promotion }}%
-              </ng-template>
-            </td>
-            <td>
-              <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayCategorie">
-                <input type="text" class="form-control" [ngModel]="produitAModifier?.categorie" (ngModelChange)="produitAModifier!.categorie = $event">
-              </ng-container>
-              <ng-template #displayCategorie>
-                {{ produit.categorie }}
-              </ng-template>
-            </td>
-            <td>
-              <div class="btn-group">
-                <ng-container *ngIf="modeEdition && produitAModifier?.idProduit === produit.idProduit; else displayButtons">
-                  <button class="btn btn-success me-2" (click)="sauvegarderModification()">
-                    Sauvegarder
-                  </button>
-                  <button class="btn btn-secondary" (click)="annulerModification()">
-                    Annuler
-                  </button>
-                </ng-container>
-                <ng-template #displayButtons>
-                  <button class="btn btn-warning me-2" (click)="modifierProduit(produit)">
-                    Modifier
-                  </button>
-                  <button class="btn btn-danger delete-button" (click)="supprimerProduit(produit.idProduit!)">
-                    Supprimer
-                  </button>
-                </ng-template>
-              </div>
+              <button class="btn btn-primary btn-sm me-2" (click)="openEditProductModal(editProductModal, produit)">
+                Modifier
+              </button>
+              <button class="btn btn-danger btn-sm me-2" (click)="supprimerProduit(produit.idProduit!)">
+                Supprimer
+              </button>
+              <a class="btn btn-success btn-sm" (click)="naviguerVersPaiement(produit)">
+                Payer
+              </a>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div *ngIf="!loading && produits.length === 0" class="empty-state">
+    <div *ngIf="!loading && produitsAffiches.length === 0" class="empty-state">
       Aucun produit disponible
     </div>
   </div>
 </div>
+
+<!-- Modal Ajout Produit -->
+<ng-template #addProductModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Ajouter un nouveau produit</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <form #productForm="ngForm" (ngSubmit)="sauvegarderProduit(productForm, modal)">
+    <div class="modal-body">
+      <div class="mb-3">
+        <label for="nom" class="form-label">Nom</label>
+        <input type="text" class="form-control" id="nom" name="nom" [(ngModel)]="nouveauProduit.nom" required #nom="ngModel">
+        <div class="invalid-feedback" *ngIf="nom.invalid && (nom.dirty || nom.touched)">
+          Le nom est requis
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" [(ngModel)]="nouveauProduit.description" required #description="ngModel"></textarea>
+        <div class="invalid-feedback" *ngIf="description.invalid && (description.dirty || description.touched)">
+          La description est requise
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="prix" class="form-label">Prix (€)</label>
+        <input type="number" class="form-control" id="prix" name="prix" [(ngModel)]="nouveauProduit.prix" required min="0" step="0.01" #prix="ngModel">
+        <div class="invalid-feedback" *ngIf="prix.invalid && (prix.dirty || prix.touched)">
+          Le prix doit être supérieur à 0
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="quantiteStock" class="form-label">Quantité en stock</label>
+        <input type="number" class="form-control" id="quantiteStock" name="quantiteStock" [(ngModel)]="nouveauProduit.quantiteStock" required min="0" #stock="ngModel">
+        <div class="invalid-feedback" *ngIf="stock.invalid && (stock.dirty || stock.touched)">
+          La quantité doit être supérieure à 0
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="categorie" class="form-label">Catégorie</label>
+        <input type="text" class="form-control" id="categorie" name="categorie" [(ngModel)]="nouveauProduit.categorie" required #categorie="ngModel">
+        <div class="invalid-feedback" *ngIf="categorie.invalid && (categorie.dirty || categorie.touched)">
+          La catégorie est requise
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="!productForm.form.valid">Sauvegarder</button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- Modal Modification Produit -->
+<ng-template #editProductModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Modifier le produit</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <form #editForm="ngForm" (ngSubmit)="modifierProduit(editForm, modal)">
+    <div class="modal-body">
+      <div class="mb-3">
+        <label for="editNom" class="form-label">Nom</label>
+        <input type="text" class="form-control" id="editNom" name="nom" [(ngModel)]="produitAModifier!.nom" required #editNom="ngModel">
+        <div class="invalid-feedback" *ngIf="editNom.invalid && (editNom.dirty || editNom.touched)">
+          Le nom est requis
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="editDescription" class="form-label">Description</label>
+        <textarea class="form-control" id="editDescription" name="description" [(ngModel)]="produitAModifier!.description" required #editDescription="ngModel"></textarea>
+        <div class="invalid-feedback" *ngIf="editDescription.invalid && (editDescription.dirty || editDescription.touched)">
+          La description est requise
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="editPrix" class="form-label">Prix (€)</label>
+        <input type="number" class="form-control" id="editPrix" name="prix" [(ngModel)]="produitAModifier!.prix" required min="0" step="0.01" #editPrix="ngModel">
+        <div class="invalid-feedback" *ngIf="editPrix.invalid && (editPrix.dirty || editPrix.touched)">
+          Le prix doit être supérieur à 0
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="editQuantiteStock" class="form-label">Quantité en stock</label>
+        <input type="number" class="form-control" id="editQuantiteStock" name="quantiteStock" [(ngModel)]="produitAModifier!.quantiteStock" required min="0" #editStock="ngModel">
+        <div class="invalid-feedback" *ngIf="editStock.invalid && (editStock.dirty || editStock.touched)">
+          La quantité doit être supérieure à 0
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="editCategorie" class="form-label">Catégorie</label>
+        <input type="text" class="form-control" id="editCategorie" name="categorie" [(ngModel)]="produitAModifier!.categorie" required #editCategorie="ngModel">
+        <div class="invalid-feedback" *ngIf="editCategorie.invalid && (editCategorie.dirty || editCategorie.touched)">
+          La catégorie est requise
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="!editForm.form.valid">Sauvegarder</button>
+    </div>
+  </form>
+</ng-template>

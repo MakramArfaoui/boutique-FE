@@ -1,8 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
-import { PageproduitRoutingModule } from './pageproduit-routing.module';
+import { RouterModule } from '@angular/router';
 import { PageproduitComponent } from './pageproduit.component';
 
 @NgModule({
@@ -11,11 +9,7 @@ import { PageproduitComponent } from './pageproduit.component';
   ],
   imports: [
     CommonModule,
-    FormsModule,
-    PageproduitRoutingModule
-  ],
-  exports: [
-    PageproduitComponent
+    RouterModule
   ]
 })
 export class PageproduitModule { }

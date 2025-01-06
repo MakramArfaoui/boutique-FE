@@ -1,0 +1,120 @@
+<app-notification></app-notification>
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Paiement</h2>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="paiementForm" (ngSubmit)="onSubmit()">
+            <!-- Montant -->
+            <div class="mb-3">
+              <label for="montant" class="form-label">Montant (€)</label>
+              <input type="number" 
+                     class="form-control" 
+                     id="montant" 
+                     formControlName="montant"
+                     [class.is-invalid]="isFieldInvalid('montant')">
+              <div class="invalid-feedback" *ngIf="isFieldInvalid('montant')">
+                Le montant est requis et doit être supérieur à 0
+              </div>
+            </div>
+
+            <!-- Mode de paiement -->
+            <div class="mb-3">
+              <label for="modePaiement" class="form-label">Mode de paiement</label>
+              <select class="form-select" 
+                      id="modePaiement" 
+                      formControlName="modePaiement"
+                      [class.is-invalid]="isFieldInvalid('modePaiement')">
+                <option value="">Sélectionnez un mode de paiement</option>
+                <option *ngFor="let mode of modesPaiement" [value]="mode">
+                  {{mode}}
+                </option>
+              </select>
+              <div class="invalid-feedback" *ngIf="isFieldInvalid('modePaiement')">
+                Veuillez sélectionner un mode de paiement
+              </div>
+            </div>
+
+            <!-- Numéro de commande -->
+            <div class="mb-3">
+              <label for="idCommande" class="form-label">Numéro de commande</label>
+              <input type="number" 
+                     class="form-control" 
+                     id="idCommande" 
+                     formControlName="idCommande"
+                     [class.is-invalid]="isFieldInvalid('idCommande')">
+              <div class="invalid-feedback" *ngIf="isFieldInvalid('idCommande')">
+                Le numéro de commande est requis
+              </div>
+            </div>
+
+            <!-- Informations de carte de crédit -->
+            <div *ngIf="paiementForm.get('modePaiement')?.value === 'CARTE'" class="card-payment-section">
+              <h4 class="mb-3">Informations de carte</h4>
+              
+              <!-- Numéro de carte -->
+              <div class="mb-3">
+                <label for="numeroCarte" class="form-label">Numéro de carte</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="numeroCarte" 
+                       formControlName="numeroCarte"
+                       [class.is-invalid]="isFieldInvalid('numeroCarte')"
+                       placeholder="1234 5678 9012 3456">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('numeroCarte')">
+                  Veuillez entrer un numéro de carte valide (16 chiffres)
+                </div>
+              </div>
+
+              <!-- Date d'expiration -->
+              <div class="mb-3">
+                <label for="dateExpiration" class="form-label">Date d'expiration (MM/YY)</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="dateExpiration" 
+                       formControlName="dateExpiration"
+                       [class.is-invalid]="isFieldInvalid('dateExpiration')"
+                       placeholder="MM/YY">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('dateExpiration')">
+                  Format invalide (MM/YY)
+                </div>
+              </div>
+
+              <!-- CVV -->
+              <div class="mb-3">
+                <label for="cvv" class="form-label">CVV</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="cvv" 
+                       formControlName="cvv"
+                       [class.is-invalid]="isFieldInvalid('cvv')"
+                       placeholder="123">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('cvv')">
+                  CVV invalide (3 ou 4 chiffres)
+                </div>
+              </div>
+            </div>
+
+            <!-- Boutons -->
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" 
+                      class="btn btn-secondary" 
+                      (click)="resetForm()">
+                Réinitialiser
+              </button>
+              <button type="submit" 
+                      class="btn btn-primary" 
+                      [disabled]="paiementForm.invalid || loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                Payer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

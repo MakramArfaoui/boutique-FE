@@ -4,7 +4,8 @@ import { PageproduitComponent } from './pageproduit/pageproduit.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/produits', pathMatch: 'full' },
-  { path: 'produits', component: PageproduitComponent }
+  { path: 'produits', component: PageproduitComponent },
+  { path: 'Paiement', loadChildren: () => import('./paiement/paiement.module').then(m => m.PaiementModule) }
 ];
 
 @NgModule({
