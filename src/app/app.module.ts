@@ -8,6 +8,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { Injectable } from '@angular/core';
+import { LoginComponent } from './login/login.component';
 
 @Injectable()
 class CorsInterceptor implements HttpInterceptor {
@@ -21,7 +22,8 @@ class CorsInterceptor implements HttpInterceptor {
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,
