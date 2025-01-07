@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PaiementService } from '../services/paiement.service';
 import { NotificationService } from '../services/notification.service';
-import { Paiement } from '../models/paiement.model';
-import { Router, ActivatedRoute } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { NotificationComponent } from '../components/notification/notification.component';
+import { Paiement } from '../models/paiement.model';
 
 @Component({
   selector: 'app-paiement',
@@ -17,100 +17,161 @@ import { NotificationComponent } from '../components/notification/notification.c
 export class PaiementComponent implements OnInit {
   paiementForm: FormGroup;
   loading = false;
-  modesPaiement = ['CARTE', 'PAYPAL', 'VIREMENT'];
-  
+  submitted = false;
+  paiementSelectionne: Paiement | null = null;
+  paiements: Paiement[] = [];
+  modesPaiement = ['CARTE', 'ESPECES', 'CHEQUE'];
+  idCommande: string | null = null;
+
   constructor(
     private formBuilder: FormBuilder,
     private paiementService: PaiementService,
     private notificationService: NotificationService,
-    private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.paiementForm = this.formBuilder.group({
       montant: ['', [Validators.required, Validators.min(0)]],
       modePaiement: ['', Validators.required],
-      idCommande: ['', Validators.required],
-      numeroCarte: ['', [Validators.required, Validators.pattern('^[0-9]{16}$')]],
-      dateExpiration: ['', [Validators.required, Validators.pattern('^(0[1-9]|1[0-2])/[0-9]{2}$')]],
-      cvv: ['', [Validators.required, Validators.pattern('^[0-9]{3,4}$')]]
+      numeroCarte: [''],
+      dateExpiration: [''],
+      codeSecurite: ['']
     });
   }
 
-  ngOnInit(): void {
-    // Récupérer les paramètres de l'URL
-    this.route.queryParams.subscribe(params => {
-      if (params['montant']) {
-        this.paiementForm.patchValue({
-          montant: params['montant']
-        });
-      }
-      if (params['idProduit']) {
-        this.paiementForm.patchValue({
-          idCommande: params['idProduit']
-        });
-      }
-    });
+  ngOnInit() {
+    this.initializeFormFromUrl();
+    this.chargerPaiements();
 
-    // Gérer la validation conditionnelle pour les champs de carte
+    // Écouter les changements du mode de paiement
     this.paiementForm.get('modePaiement')?.valueChanges.subscribe(mode => {
-      const cartControls = ['numeroCarte', 'dateExpiration', 'cvv'];
-      
-      if (mode === 'CARTE') {
-        cartControls.forEach(control => {
-          this.paiementForm.get(control)?.enable();
-        });
-      } else {
-        cartControls.forEach(control => {
-          this.paiementForm.get(control)?.disable();
-          this.paiementForm.get(control)?.clearValidators();
-          this.paiementForm.get(control)?.updateValueAndValidity();
-        });
+      this.updateValidationsCarte(mode);
+    });
+  }
+
+  private initializeFormFromUrl() {
+    const montantParam = this.route.snapshot.queryParamMap.get('montant');
+    this.idCommande = this.route.snapshot.queryParamMap.get('commande');
+    
+    if (montantParam) {
+      this.paiementForm.patchValue({ montant: parseFloat(montantParam) });
+    }
+  }
+
+  private updateValidationsCarte(mode: string) {
+    const carteControls = ['numeroCarte', 'dateExpiration', 'codeSecurite'];
+    
+    if (mode === 'CARTE') {
+      carteControls.forEach(control => {
+        this.paiementForm.get(control)?.setValidators([Validators.required]);
+      });
+    } else {
+      carteControls.forEach(control => {
+        this.paiementForm.get(control)?.clearValidators();
+        this.paiementForm.get(control)?.setValue('');
+      });
+    }
+    
+    carteControls.forEach(control => {
+      this.paiementForm.get(control)?.updateValueAndValidity();
+    });
+  }
+
+  chargerPaiements() {
+    this.loading = true;
+    this.paiementService.getPaiements().subscribe({
+      next: (data) => {
+        this.paiements = data;
+        this.loading = false;
+      },
+      error: (error) => {
+        this.notificationService.showError('Erreur lors du chargement des paiements');
+        console.error('Erreur:', error);
+        this.loading = false;
       }
     });
   }
 
   onSubmit() {
-    if (this.paiementForm.valid) {
-      this.loading = true;
-      
-      const paiement: Paiement = {
-        montant: this.paiementForm.get('montant')?.value,
-        datePaiement: new Date(),
-        modePaiement: this.paiementForm.get('modePaiement')?.value,
-        idCommande: this.paiementForm.get('idCommande')?.value
-      };
+    this.submitted = true;
 
-      this.paiementService.creerPaiement(paiement).subscribe(
-        (response) => {
-          this.notificationService.showSuccess('Paiement effectué avec succès !');
-          this.loading = false;
-          this.router.navigate(['/confirmation-paiement']);
+    if (this.paiementForm.invalid) {
+      return;
+    }
+
+    this.loading = true;
+    const paiementData = {
+      ...this.paiementForm.value,
+      idCommande: this.idCommande
+    };
+
+    if (this.paiementSelectionne) {
+      // Mise à jour d'un paiement existant
+      this.paiementService.updatePaiement(this.paiementSelectionne.id!, paiementData).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Paiement modifié avec succès');
+          this.resetForm();
+          this.chargerPaiements();
         },
-        (error) => {
-          this.notificationService.showError('Erreur lors du paiement. Veuillez réessayer.');
+        error: (error) => {
+          this.notificationService.showError('Erreur lors de la modification du paiement');
+          console.error('Erreur:', error);
           this.loading = false;
         }
-      );
+      });
     } else {
-      this.markFormGroupTouched(this.paiementForm);
+      // Création d'un nouveau paiement
+      this.paiementService.creerPaiement(paiementData).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Paiement créé avec succès');
+          this.resetForm();
+          this.chargerPaiements();
+        },
+        error: (error) => {
+          this.notificationService.showError('Erreur lors de la création du paiement');
+          console.error('Erreur:', error);
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  selectionnerPaiement(paiement: Paiement) {
+    this.paiementSelectionne = paiement;
+    this.idCommande = paiement.idCommande || null;
+    this.paiementForm.patchValue({
+      montant: paiement.montant,
+      modePaiement: paiement.modePaiement,
+      numeroCarte: paiement.numeroCarte,
+      dateExpiration: paiement.dateExpiration,
+      codeSecurite: paiement.codeSecurite
+    });
+  }
+
+  supprimerPaiement(id: number) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce paiement ?')) {
+      this.loading = true;
+      this.paiementService.deletePaiement(id).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Paiement supprimé avec succès');
+          this.chargerPaiements();
+        },
+        error: (error) => {
+          this.notificationService.showError('Erreur lors de la suppression du paiement');
+          console.error('Erreur:', error);
+          this.loading = false;
+        }
+      });
     }
   }
 
   resetForm() {
+    this.submitted = false;
+    this.loading = false;
+    this.paiementSelectionne = null;
     this.paiementForm.reset();
   }
 
-  isFieldInvalid(fieldName: string): boolean {
-    const field = this.paiementForm.get(fieldName);
-    return field ? (field.invalid && (field.dirty || field.touched)) : false;
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach(control => {
-      control.markAsTouched();
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
-      }
-    });
-  }
+  // Getters pour accéder facilement aux contrôles du formulaire
+  get f() { return this.paiementForm.controls; }
 }

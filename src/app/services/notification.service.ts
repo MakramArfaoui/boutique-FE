@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 
 export interface Notification {
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info' | 'warning';
 }
 
 @Injectable({
@@ -11,13 +11,25 @@ export interface Notification {
 })
 export class NotificationService {
   private notificationSubject = new Subject<Notification>();
-  notification$ = this.notificationSubject.asObservable();
+  notifications$ = this.notificationSubject.asObservable();
 
   showSuccess(message: string) {
-    this.notificationSubject.next({ message, type: 'success' });
+    this.show(message, 'success');
   }
 
   showError(message: string) {
-    this.notificationSubject.next({ message, type: 'error' });
+    this.show(message, 'error');
+  }
+
+  showInfo(message: string) {
+    this.show(message, 'info');
+  }
+
+  showWarning(message: string) {
+    this.show(message, 'warning');
+  }
+
+  private show(message: string, type: 'success' | 'error' | 'info' | 'warning') {
+    this.notificationSubject.next({ message, type });
   }
 }

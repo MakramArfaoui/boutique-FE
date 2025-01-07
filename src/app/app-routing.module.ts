@@ -1,13 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { PageproduitComponent } from './pageproduit/pageproduit.component';
-import {LoginComponent} from './login/login.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/produits', pathMatch: 'full' },
-  { path: 'produits', component: PageproduitComponent },
-  { path: 'login', component: LoginComponent },
-  { path: 'Paiement', loadChildren: () => import('./paiement/paiement.module').then(m => m.PaiementModule) }
+  { path: 'produits', loadChildren: () => import('./pageproduit/pageproduit.module').then(m => m.PageproduitModule) },
+  { path: 'Paiement', loadChildren: () => import('./paiement/paiement.module').then(m => m.PaiementModule) },
+  { path: 'login', loadChildren: () => import('./login/login.module').then(m => m.LoginModule) }
 ];
 
 @NgModule({
